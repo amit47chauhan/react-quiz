@@ -1,8 +1,8 @@
 import { useEffect, useReducer } from "react";
 import Header from "./Header";
 import Main from "./Main";
-import Loader from './Loader';
-import Error from './Error';
+import Loader from "./Loader";
+import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
 
@@ -14,8 +14,13 @@ function App() {
     status: "loading",
 
     //first question position
-    index:0,
-    
+    index: 0,
+
+    // initial answer is null
+    answer: null,
+
+    //user points
+    points: 0,
   };
 
   function reducer(state, action) {
@@ -27,12 +32,27 @@ function App() {
       //creating action to set the status to active
       case "start":
         return { ...state, status: "active" };
+
+      case "newAnswer":
+        const question = state.questions[state.index];
+        return {
+          ...state,
+          answer: action.payload,
+          points:
+            action.payload === question.correctOption
+              ? state.points + question.points
+              : state.points,
+        };
+
       default:
         throw new Error("Action Unknown");
     }
   }
 
-  const [{ questions, status, index }, dispatch] = useReducer(reducer, initialState);
+  const [{ questions, status, index, answer, point }, dispatch] = useReducer(
+    reducer,
+    initialState
+  );
 
   //calculating the number of questions
   const numQuestions = questions.length;
@@ -43,7 +63,7 @@ function App() {
       .then((res) => res.json())
       .then((data) => dispatch({ type: "dataReceived", payload: data }))
       .catch((err) => dispatch({ type: "dataFailed" }));
-  },[]);
+  }, []);
 
   return (
     <div className="app">
@@ -54,7 +74,13 @@ function App() {
         {status === "ready" && (
           <StartScreen numQuestions={numQuestions} dispatch={dispatch} />
         )}
-        {status === "active" && <Question question = {questions[index]} />}
+        {status === "active" && (
+          <Question
+            question={questions[index]}
+            dispatch={dispatch}
+            answer={answer}
+          />
+        )}
       </Main>
     </div>
   );
